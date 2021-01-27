@@ -1,0 +1,8 @@
+session location sequence weight INDIVIDUAL action
+a1      texas    1        10       john       Z1
+a1      texas    2        5        peter      Z2
+a1      texas    3        3        ben        Z1
+a1      texas    4        5        peter      Z5
+a2      calif    1        25       esther     Z3
+a2      calif    2        5        peggy      Z2
+a2      calif    3        10       greg       Z5
