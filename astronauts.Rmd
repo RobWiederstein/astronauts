@@ -51,7 +51,7 @@ table(unlist(lapply(df, class)))
 
 ```{r}
 my.summary <- do.call(cbind, lapply(df, summary, digits = 2))
-my.summary
+my.summary[1:5, 1:5]
 ```
 
 ## Challenges
@@ -71,17 +71,64 @@ duplicate.number <- df2$number[duplicated(df2$number)]
 df[which(df$number == duplicate.number)]
 ```
 
-```{r }
+```{r astro-corr-numeric}
 df3 <- dplyr::select_if(df, is.numeric)
 df3 <- dplyr::select(df3, -id, -number, -mission_number)
 res <- cor(df3)
 res <- round(res, 2)
 library(corrplot)
 col<- colorRampPalette(c("blue", "white", "red"))(20)
-par(mar = c(3, 3, 3, 3))
 heatmap(x = res, col = col, 
         symm = TRUE, 
-        margins = c(5, 5),
+        margins = c(10, 10),
         main = "Numeric Astonaut Variables")
+```
+
+```{r astro-univariate-distributions}
+df4 <- dplyr::select_if(df, is.numeric)
+df4 <- dplyr::select(df4, hours_mission, total_hrs_sum)
+df4 <- tidyr::gather(df4)
+library(ggplot2)
+p <- ggplot(df4, aes(value, group = key, colour = key))
+p <- p + geom_boxplot()
+p
+```
+
+```{r}
+df$age <- df$year_of_mission - df$year_of_birth
+df5 <-
+        df %>%
+        select(name, age, sex) 
+p <- ggplot(df5, aes(age))
+p <- p + geom_histogram(binwidth = 1)
+p <- p + facet_grid(. ~ sex)
+p
+```
+
+
+```{r astro-space-flights}
+df$num <- 1
+df6 <-
+        df %>%
+        dplyr::filter(nationality %in% c("U.S.S.R/Russia", "U.S.")) %>%
+        group_by(year_of_mission, nationality) %>%
+        summarize(flights = sum(num))
+colnames(df6)[1] <- "year"
+p <- ggplot(df6, aes(year, flights, group = nationality, color = nationality))
+p <- p + geom_line()
+p <- p + geom_point(size = 1)
+p <- p + ggtitle(paste("Annual Flights U.S. v. Russia 1961 - 2019"))
+p
+```
+
+
+```{r astro-top-10-space-time}
+df7 <-
+        df %>%
+        select(name, nationality, sex, year_of_birth, total_hrs_sum) %>%
+        arrange(-total_hrs_sum) %>%
+        distinct() %>%
+        dplyr::slice_head(n = 10)
+df7
 ```
 
