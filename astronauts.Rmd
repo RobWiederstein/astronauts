@@ -1,0 +1,87 @@
+---
+title: "Astronauts"
+output: html_notebook
+---
+
+```{r astronaut-import-libraries, include = F}
+x <- c("igraph", "dplyr", "magrittr")
+sapply(x, library, character.only = T)
+```
+
+This project was based on the astronaut [dataset](https://www.kaggle.com/jessemostipak/astronaut-database) at kaggle. It was downloaded and imported. There were `r nrow(df)` rows and `r ncol(df)` columns.
+
+```{r astronaut-import-data}
+input <- "./data/astronauts.csv"
+df <- data.table::fread(input = input)
+```
+
+# Preliminaries
+
+## Missingness
+
+Let's check for missingness. `r length(which(is.na(df) == T))` values are missing.  Subsetting to only the rows that contain a missing value yields the dataframe below.
+
+```{r astro-subset-nas}
+df.na <- df[!complete.cases(df), ]
+df.na
+```
+
+Also, let's understand what values in the variables are missing and see if there is any discernible pattern.
+
+```{r astro-amelia-missmap}
+Amelia::missmap(df.na)
+```
+
+## Unique values
+
+Also, let's count the unique values within each column to identify potential factor variables. The `id` field is clearly a unique identifier for each row. It also appears that each astronaut has a unique identifier in the `number` field in addition to the `name` field.
+
+```{r astro-unique-values}
+rev(sort(apply(df, 2, function(x) length(unique(x)))))
+```
+
+## Variable Types
+
+```{r astro-column-classes}
+class(df$id)
+table(unlist(lapply(df, class)))
+```
+
+## Summary
+
+```{r}
+my.summary <- do.call(cbind, lapply(df, summary, digits = 2))
+my.summary
+```
+
+## Challenges
+
+There was some difficulty in the data which was discovered when creating a network analysis.  The names were problematic. "Aleksandrov, Aleksandr", a Russian astronaut, is the same person but appears in the astronaut subset twice.  The other issue is that two astronauts have been assigned the number "385": Yuri Baturin and Pedro Duque.  This challenge will be set aside for the time being.
+
+```{r astronaut-subset-name}
+df2 <- df[, c(2, 4)] #subset main df to just names and number
+df2 <- dplyr::distinct(df2) #filter to unique/distinct values 564
+length(unique(df2$name)) #564 astronauts
+length(unique(df2$number))#564 unique numbers
+#one astronaut is included in the names column twice--it is the same person
+duplicate.name <- df2$name[duplicated(df2$name)] #"Aleksandrov, Aleksandr"
+df2[grep("Aleksandrov, Aleksandr", df2$name)]
+#two astronauts have the same number
+duplicate.number <- df2$number[duplicated(df2$number)]
+df[which(df$number == duplicate.number)]
+```
+
+```{r }
+df3 <- dplyr::select_if(df, is.numeric)
+df3 <- dplyr::select(df3, -id, -number, -mission_number)
+res <- cor(df3)
+res <- round(res, 2)
+library(corrplot)
+col<- colorRampPalette(c("blue", "white", "red"))(20)
+par(mar = c(3, 3, 3, 3))
+heatmap(x = res, col = col, 
+        symm = TRUE, 
+        margins = c(5, 5),
+        main = "Numeric Astonaut Variables")
+```
+
