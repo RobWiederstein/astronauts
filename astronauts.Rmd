@@ -4,16 +4,16 @@ output: html_notebook
 ---
 
 ```{r astronaut-import-libraries, include = F}
-x <- c("igraph", "dplyr", "magrittr")
+x <- c("igraph", "tidyverse", "kableExtra")
 sapply(x, library, character.only = T)
 ```
-
-This project was based on the astronaut [dataset](https://www.kaggle.com/jessemostipak/astronaut-database) at kaggle. It was downloaded and imported. There were `r nrow(df)` rows and `r ncol(df)` columns.
 
 ```{r astronaut-import-data}
 input <- "./data/astronauts.csv"
 df <- data.table::fread(input = input)
 ```
+
+This project was based on the astronaut [dataset](https://www.kaggle.com/jessemostipak/astronaut-database) at kaggle. It was downloaded and imported. The dataset contains all flights into space and has descriptive informaton on the flight and the basic biographical information of the astronauts on the flight.  There were `r nrow(df)` rows and `r ncol(df)` columns. The first mission was in `r min(df$year_of_mission)` and the dataset includes the missions through `r max(df$year_of_mission)`.
 
 # Preliminaries
 
@@ -29,7 +29,9 @@ df.na
 Also, let's understand what values in the variables are missing and see if there is any discernible pattern.
 
 ```{r astro-amelia-missmap}
-Amelia::missmap(df.na)
+Amelia::missmap(df.na, 
+                margins = c(10, 10),
+                main = "Astronauts Missing Data")
 ```
 
 ## Unique values
@@ -37,7 +39,7 @@ Amelia::missmap(df.na)
 Also, let's count the unique values within each column to identify potential factor variables. The `id` field is clearly a unique identifier for each row. It also appears that each astronaut has a unique identifier in the `number` field in addition to the `name` field.
 
 ```{r astro-unique-values}
-rev(sort(apply(df, 2, function(x) length(unique(x)))))
+rev(sort(apply(df, 2, function(x) length(unique(x))))) 
 ```
 
 ## Variable Types
@@ -130,5 +132,33 @@ df7 <-
         distinct() %>%
         dplyr::slice_head(n = 10)
 df7
+```
+
+## Social Nework Analysis
+
+```{r}
+space_race <- min(df$year_of_mission): 1969
+df.1 <- dplyr::filter(df, year_of_mission %in% space_race)
+
+df.2 <-
+        df.1 %>%  
+        select(mission_title, name) %>%
+        inner_join(., select(., mission_title, name), by = "mission_title") %>%
+        rename(name1 = name.x, name2 = name.y) %>%
+        dplyr::filter(name1 != name2) %>%
+        arrange(mission_title) %>% 
+        unique
+
+#save edge list
+df.3 <- dplyr::select(df.2, name1, name2,  mission_title)
+df.4 <- as.matrix(df.3[, 1:2])
+g <- graph_from_edgelist(df.4, directed = FALSE)
+g1 <- simplify(g)
+plot(g1,
+     edge.label = NA,
+     vertex.label = NA,
+     vertex.size = 2
+     )
+
 ```
 
