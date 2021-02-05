@@ -2343,12 +2343,37 @@ df7</code></pre>
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGV2Lm9mZigpXG5cbmBgYCJ9 -->
-<pre class="r"><code>dev.off()
-</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxueCA8LSB0a3Bsb3QoZzEsXG4gICAgIGxheW91dCA9IGxheW91dF93aXRoX2ZyLFxuICAgICB2ZXJ0ZXguY29sb3IgPSBWKGcxKSRuYXRpb25hbGl0eV9jb2wsXG4gICAgIHZlcnRleC5zaXplID0gVihnMSkkdG90YWxfbnVtYmVyX29mX21pc3Npb25zICogMixcbiAgICAgdmVydGV4LmxhYmVsID0gVihnMSkkbGFzdF9uYW1lLFxuICAgICB2ZXJ0ZXgubGFiZWwuZGlzdCA9IDEuNCxcbiAgICAgdmVydGV4LmxhYmVsLmNleCA9IDEuMjUsXG4gICAgIGFzcCA9IDAsXG4gICAgIG1haW4gPSBcIlUuUy4gdnMuIFJ1c3NpYSBTcGFjZSBSYWNlXCJcbiAgICAgKVxuI0hlcmU6IE1vdmUgbm9kZXMgd2l0aGluIHRoZSB0a3Bsb3Qgd2luZG93IHRvIGEgbGF5b3V0IHlvdSBsaWtlIVxuY29vcmRzMDEgPC0gdGtwbG90LmdldGNvb3Jkcyh4KVxuZmlsZW5hbWUgPC0gXCIuL2FzdHJvbmF1dHNfY29vcmRzX3ZpYV90a3Bsb3QuanBlZ1wiXG5qcGVnKGZpbGVuYW1lID0gZmlsZW5hbWUsIHdpZHRoID0gNiwgaGVpZ2h0ID0gNCwgdW5pdHMgPSBcImluXCIsIHF1YWxpdHkgPSA5NSwgcmVzID0gMzAwLCB0eXBlID0gXCJjYWlyb1wiKVxucGFyKG1hciA9IGMoMSwgMCwgMSwgMCkpXG5wbG90KGcxLFxuICAgICAgICBsYXlvdXQgPSBjb29yZHMwMSxcbiAgICAgICAgbWFpbiA9IFwiVS5TLiB2cy4gUnVzc2lhIFNwYWNlIFJhY2VcIixcbiAgICAgICAgdmVydGV4LmNvbG9yID0gVihnMSkkbmF0aW9uYWxpdHlfY29sLFxuICAgICAgICB2ZXJ0ZXguc2l6ZSA9IFYoZzEpJHRvdGFsX251bWJlcl9vZl9taXNzaW9ucyAqIDIsXG4gICAgICAgIHZlcnRleC5sYWJlbCA9IFYoZzEpJGxhc3RfbmFtZSxcbiAgICAgICAgdmVydGV4LmxhYmVsLmRpc3QgPSAxLjQsXG4gICAgICAgIHZlcnRleC5sYWJlbC5jZXggPSAxLjI1LFxuICAgICAgICBhc3AgPSAwXG4gICAgIClcbmRldi5vZmYoKVxuYGBgIn0= -->
+<pre class="r"><code>x &lt;- tkplot(g1,
+     layout = layout_with_fr,
+     vertex.color = V(g1)$nationality_col,
+     vertex.size = V(g1)$total_number_of_missions * 2,
+     vertex.label = V(g1)$last_name,
+     vertex.label.dist = 1.4,
+     vertex.label.cex = 1.25,
+     asp = 0,
+     main = &quot;U.S. vs. Russia Space Race&quot;
+     )
+#Here: Move nodes within the tkplot window to a layout you like!
+coords01 &lt;- tkplot.getcoords(x)
+filename &lt;- &quot;./astronauts_coords_via_tkplot.jpeg&quot;
+jpeg(filename = filename, width = 6, height = 4, units = &quot;in&quot;, quality = 95, res = 300, type = &quot;cairo&quot;)
+par(mar = c(1, 0, 1, 0))
+plot(g1,
+        layout = coords01,
+        main = &quot;U.S. vs. Russia Space Race&quot;,
+        vertex.color = V(g1)$nationality_col,
+        vertex.size = V(g1)$total_number_of_missions * 2,
+        vertex.label = V(g1)$last_name,
+        vertex.label.dist = 1.4,
+        vertex.label.cex = 1.25,
+        asp = 0
+     )
+dev.off()</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiRXJyb3IgaW4gZGV2Lm9mZigpIDogY2Fubm90IHNodXQgZG93biBkZXZpY2UgMSAodGhlIG51bGwgZGV2aWNlKVxuIn0= -->
-<pre><code>Error in dev.off() : cannot shut down device 1 (the null device)</code></pre>
+<!-- rnb-output-begin eyJkYXRhIjoibnVsbCBkZXZpY2UgXG4gICAgICAgICAgMSBcbiJ9 -->
+<pre><code>null device 
+          1 </code></pre>
 <!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
