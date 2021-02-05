@@ -152,13 +152,71 @@ df.2 <-
 #save edge list
 df.3 <- dplyr::select(df.2, name1, name2,  mission_title)
 df.4 <- as.matrix(df.3[, 1:2])
-g <- graph_from_edgelist(df.4, directed = FALSE)
+g <- graph_from_data_frame(df.3,
+                           directed = FALSE)
 g1 <- simplify(g)
 plot(g1,
-     edge.label = NA,
-     vertex.label = NA,
-     vertex.size = 2
+     vertex.label = NA)
+
+```
+
+```{r astro-space-race-nodes, fig.asp = .66}
+#nodes
+nodes <- tibble(name = unique(c(df.3$name1, df.3$name2)))
+nodes.1 <- dplyr::left_join(nodes, df.1, by = "name")
+nodes.1 <- nodes.1[-which(duplicated(nodes.1$name) == TRUE), ]
+#add nationality
+nodes.1$nationality_col <- "blue"
+nodes.1$nationality_col[grep("Russia", nodes.1$nationality)] <- "red"
+#add lastname
+nodes.1$last_name <- gsub(",", "", word(nodes.1$name))
+#graph
+g <- graph_from_data_frame(df.3,
+                           directed = FALSE,
+                           vertices = nodes.1)
+g1 <- simplify(g)
+par(mar = c(1, 1, 1, 1))
+set.seed(123)
+plot(g1,
+     layout = layout_with_fr,
+     vertex.color = V(g1)$nationality_col,
+     vertex.size = V(g1)$total_number_of_missions * 1.75,
+     vertex.label = V(g1)$last_name,
+     vertex.label.dist = 1.4,
+     vertex.label.cex = 1.25,
+     asp = 0,
+     main = "U.S. vs. Russia Space Race"
      )
+
+```
+
+```{r}
+x <- tkplot(g1,
+     layout = layout_with_fr,
+     vertex.color = V(g1)$nationality_col,
+     vertex.size = V(g1)$total_number_of_missions * 2,
+     vertex.label = V(g1)$last_name,
+     vertex.label.dist = 1.4,
+     vertex.label.cex = 1.25,
+     asp = 0,
+     main = "U.S. vs. Russia Space Race"
+     )
+#Here: Move nodes within the tkplot window to a layout you like!
+coords01 <- tkplot.getcoords(x)
+filename <- "./astronauts_coords_via_tkplot.jpeg"
+jpeg(filename = filename, width = 6, height = 4, units = "in", quality = 95, res = 300, type = "cairo")
+par(mar = c(1, 0, 1, 0))
+plot(g1,
+        layout = coords01,
+        main = "U.S. vs. Russia Space Race",
+        vertex.color = V(g1)$nationality_col,
+        vertex.size = V(g1)$total_number_of_missions * 2,
+        vertex.label = V(g1)$last_name,
+        vertex.label.dist = 1.4,
+        vertex.label.cex = 1.25,
+        asp = 0
+     )
+dev.off()
 
 ```
 
