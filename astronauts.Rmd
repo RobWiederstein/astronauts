@@ -1,19 +1,45 @@
 ---
 title: "Astronauts"
-output: html_notebook
+author: 'Rob Wiederstein'
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    number_sections: true
+    toc: true
+    theme: readable
+    highlight: tango
+    df_print: kable
 ---
 
+
+```{r, setup, include=F}
+knitr::opts_chunk$set(
+  fig.width = 7, 
+  fig.height = 5,
+  fig.align = "center",
+  warning = FALSE,
+  error = FALSE,
+  tidy = TRUE
+)
+```
+
 ```{r astronaut-import-libraries, include = F}
-x <- c("igraph", "tidyverse", "kableExtra")
-sapply(x, library, character.only = T)
+x <- c("igraph", "tidyverse", "kableExtra", "knitr", "corrplot")
+lapply(x, library, character.only = T)
 ```
 
-```{r astronaut-import-data}
-input <- "./data/astronauts.csv"
-df <- data.table::fread(input = input)
+# Introduction
+
+```{r astronaut-import-data, echo=F, message=F}
+file <- "./data/astronauts.csv" #"../input/astronaut-database/astronauts.csv"
+df <- read_csv(file = file)
 ```
 
-This project was based on the astronaut [dataset](https://www.kaggle.com/jessemostipak/astronaut-database) at kaggle. It was downloaded and imported. The dataset contains all flights into space and has descriptive informaton on the flight and the basic biographical information of the astronauts on the flight.  There were `r nrow(df)` rows and `r ncol(df)` columns. The first mission was in `r min(df$year_of_mission)` and the dataset includes the missions through `r max(df$year_of_mission)`.
+This project was based on the astronaut [dataset](https://www.kaggle.com/jessemostipak/astronaut-database) at kaggle. Credit for the dataset was given to  Georgios Karamanis. The sources were listed as NASA, Roscosmos and "fun-made" websites.
+
+The dataset was downloaded and imported. The dataset contains all flights into space and has descriptive informaton on the flight and the basic biographical information of the astronauts on the flight.  There were `r nrow(df)` rows and `r ncol(df)` columns. The first mission was in `r min(df$year_of_mission)` and the dataset includes the missions through `r max(df$year_of_mission)`.
+
+"EVA" is an abbreviation for "extra-vehicular-activity," and is used to describe astonaut activities outside the main capsule like space walks. `field21` is an unknown field.
 
 # Preliminaries
 
@@ -23,20 +49,22 @@ Let's check for missingness. `r length(which(is.na(df) == T))` values are missin
 
 ```{r astro-subset-nas}
 df.na <- df[!complete.cases(df), ]
-df.na
+df.na[, 1:5] #first five columns
 ```
 
-Also, let's understand what values in the variables are missing and see if there is any discernible pattern.
+Also, the missing values in the variables might reveal a pattern.  The `Amelia` package contains a quick way to plot missing data.
 
-```{r astro-amelia-missmap}
+```{r astro-amelia-missmap, fig.align="center", warning=F}
 Amelia::missmap(df.na, 
                 margins = c(10, 10),
                 main = "Astronauts Missing Data")
 ```
 
+Of the nine missing values, five are in the variable `original_name`.  The missing value in the `mission_title` variable may prove problematic.  The variable will be used to group the astronauts later in the analysis for a social network diagram.
+
 ## Unique values
 
-Also, let's count the unique values within each column to identify potential factor variables. The `id` field is clearly a unique identifier for each row. It also appears that each astronaut has a unique identifier in the `number` field in addition to the `name` field.
+Also, counting the unique values within each column could identify potential factor variables. The `id` field is clearly a unique identifier for each row. It also appears that each astronaut has a unique identifier in the `number` field in addition to the `name` field.  The `sex`, `military_civilian` and `nationality` variables could yield some interesting comparisons.
 
 ```{r astro-unique-values}
 rev(sort(apply(df, 2, function(x) length(unique(x))))) 
@@ -45,33 +73,46 @@ rev(sort(apply(df, 2, function(x) length(unique(x)))))
 ## Variable Types
 
 ```{r astro-column-classes}
-class(df$id)
-table(unlist(lapply(df, class)))
+my_vars <- lapply(df, class)
+df.vars <- data.frame(variables = names(my_vars),
+                 values = unlist(lapply(my_vars, "[[", 1))
+)
+row.names(df.vars) <- NULL
+df.vars %>% dplyr::arrange(values)
+
+
 ```
 
 ## Summary
 
-```{r}
-my.summary <- do.call(cbind, lapply(df, summary, digits = 2))
-my.summary[1:5, 1:5]
+```{r astro-summary}
+str(df, give.attr = F)
 ```
 
-## Challenges
+# Challenges
 
-There was some difficulty in the data which was discovered when creating a network analysis.  The names were problematic. "Aleksandrov, Aleksandr", a Russian astronaut, is the same person but appears in the astronaut subset twice.  The other issue is that two astronauts have been assigned the number "385": Yuri Baturin and Pedro Duque.  This challenge will be set aside for the time being.
+There was some difficulty in the data which was discovered when creating a network analysis.  The names were problematic. "Aleksandrov, Aleksandr", a Russian astronaut, appears to be the same person but is in the astronaut subset twice.  The other issue is that two astronauts have been assigned the number "385": Yuri Baturin and Pedro Duque.  This challenge will be set aside for the time being.
 
 ```{r astronaut-subset-name}
-df2 <- df[, c(2, 4)] #subset main df to just names and number
-df2 <- dplyr::distinct(df2) #filter to unique/distinct values 564
-length(unique(df2$name)) #564 astronauts
-length(unique(df2$number))#564 unique numbers
+df2 <- df[, c(2, 4)] #subset main df to just astronaut and number
+df2 <- dplyr::distinct(df2) 
+print(paste(nrow(df2), "number of distinct astronauts"))
 #one astronaut is included in the names column twice--it is the same person
-duplicate.name <- df2$name[duplicated(df2$name)] #"Aleksandrov, Aleksandr"
-df2[grep("Aleksandrov, Aleksandr", df2$name)]
+duplicate.name <- df2$name[duplicated(df2$name)]
+df2[grep(duplicate.name, df2$name), ]
+
+```
+
+
+```{r astro-duplicate-numbers}
 #two astronauts have the same number
 duplicate.number <- df2$number[duplicated(df2$number)]
-df[which(df$number == duplicate.number)]
+df2[which(df2$number == duplicate.number), ]
 ```
+
+# Correlation Among Variables
+
+Subsetting the main dataframe to the numeric variables yields an unsurprising set of correlations.
 
 ```{r astro-corr-numeric}
 df3 <- dplyr::select_if(df, is.numeric)
@@ -86,6 +127,12 @@ heatmap(x = res, col = col,
         main = "Numeric Astonaut Variables")
 ```
 
+# Descriptive Plots
+
+## Interesting Univariate Distributions
+
+Two of the more interesting distributions in the variables were `hours_mission` and `total_hrs_sum`.  A great number of outliers were evident in both the variables, meaning multiple astronauts have spent an extensive period of time in space.
+
 ```{r astro-univariate-distributions}
 df4 <- dplyr::select_if(df, is.numeric)
 df4 <- dplyr::select(df4, hours_mission, total_hrs_sum)
@@ -93,10 +140,15 @@ df4 <- tidyr::gather(df4)
 library(ggplot2)
 p <- ggplot(df4, aes(value, group = key, colour = key))
 p <- p + geom_boxplot()
+p <- p + ggtitle("Boxplot Numeric Variables")
 p
 ```
 
-```{r}
+## Flights by year and gender
+
+While the vast majority of astronauts have been male, the age distributions between the sexes is relatively the same though.  
+
+```{r astro-age-gender}
 df$age <- df$year_of_mission - df$year_of_birth
 df5 <-
         df %>%
@@ -107,6 +159,7 @@ p <- p + facet_grid(. ~ sex)
 p
 ```
 
+## Space Flights by Year (U.S. & Russia)
 
 ```{r astro-space-flights}
 df$num <- 1
@@ -123,6 +176,7 @@ p <- p + ggtitle(paste("Annual Flights U.S. v. Russia 1961 - 2019"))
 p
 ```
 
+## Astronauts Ranked by Total Hours
 
 ```{r astro-top-10-space-time}
 df7 <-
@@ -134,12 +188,21 @@ df7 <-
 df7
 ```
 
-## Social Nework Analysis
+# Social Nework Analysis
 
-```{r}
+## The Space Race
+
+The "Space Race" was a competition between  cold War rivals: the United States and U.S.S.R.  The Race begain in 1955 when the U.S. announced  its intent to launch four orbiting satellites.  The U.S.S.R. successfully launched the first orbiting satellite, Sputnik I, and sent the first human to space, Yuri Gagarin, on April 12, 1961.  The height of the Race was the U.S. landing the first person on the moon on July 20, 1969.  The mission was "Apollo 11." See the Wikipedia [article](https://en.wikipedia.org/wiki/Space_Race).
+
+Below the astronaut database was subset to the space flights from `r min(df$year_of_mission)` to 1969. Since no other countries had the capability or desire to participate and because there was a limited number of flights, the smaller dataset was easier to experiment with and the astronaut names are familiar to most.
+
+### Edge list
+
+```{r astro-space-race}
 space_race <- min(df$year_of_mission): 1969
+#subset
 df.1 <- dplyr::filter(df, year_of_mission %in% space_race)
-
+#create edge list
 df.2 <-
         df.1 %>%  
         select(mission_title, name) %>%
@@ -149,18 +212,15 @@ df.2 <-
         arrange(mission_title) %>% 
         unique
 
-#save edge list
+#edge list dataframe
 df.3 <- dplyr::select(df.2, name1, name2,  mission_title)
-df.4 <- as.matrix(df.3[, 1:2])
-g <- graph_from_data_frame(df.3,
-                           directed = FALSE)
-g1 <- simplify(g)
-plot(g1,
-     vertex.label = NA)
-
+head(df.3)
 ```
 
-```{r astro-space-race-nodes, fig.asp = .66}
+
+### Nodes
+
+```{r astro-space-race-nodes}
 #nodes
 nodes <- tibble(name = unique(c(df.3$name1, df.3$name2)))
 nodes.1 <- dplyr::left_join(nodes, df.1, by = "name")
@@ -174,7 +234,7 @@ nodes.1$last_name <- gsub(",", "", word(nodes.1$name))
 g <- graph_from_data_frame(df.3,
                            directed = FALSE,
                            vertices = nodes.1)
-g1 <- simplify(g)
+g1 <- igraph::simplify(g)
 par(mar = c(1, 1, 1, 1))
 set.seed(123)
 plot(g1,
@@ -190,33 +250,51 @@ plot(g1,
 
 ```
 
-```{r}
-x <- tkplot(g1,
+
+## All Astronauts
+
+
+```{r astro-all_astros}
+df.2 <-
+        df %>%  
+        select(mission_title, name) %>%
+        inner_join(., select(., mission_title, name), by = "mission_title") %>%
+        rename(name1 = name.x, name2 = name.y) %>%
+        dplyr::filter(name1 != name2) %>%
+        arrange(mission_title) %>% 
+        unique
+
+#edge list dataframe
+df.3 <- dplyr::select(df.2, name1, name2,  mission_title)
+head(df.3)
+```
+
+```{r astro-all-astro-nodes}
+#nodes
+nodes <- tibble(name = unique(c(df.3$name1, df.3$name2)))
+nodes.1 <- dplyr::left_join(nodes, df, by = "name")
+nodes.1 <- nodes.1[-which(duplicated(nodes.1$name) == TRUE), ]
+#add nationality
+nodes.1$nationality_col <- "yellow"
+nodes.1$nationality_col[grep("U\\.S\\.$", nodes.1$nationality)] <- "blue"
+nodes.1$nationality_col[grep("Russia", nodes.1$nationality)] <- "red"
+#graph
+g <- graph_from_data_frame(df.3,
+                           directed = FALSE,
+                           vertices = nodes.1)
+g1 <- igraph::simplify(g)
+par(mar = c(1, 1, 1, 1))
+set.seed(123)
+plot(g1,
      layout = layout_with_fr,
      vertex.color = V(g1)$nationality_col,
-     vertex.size = V(g1)$total_number_of_missions * 2,
-     vertex.label = V(g1)$last_name,
+     vertex.size = V(g1)$total_number_of_missions * 1.5,
+     vertex.label = NA,
      vertex.label.dist = 1.4,
      vertex.label.cex = 1.25,
      asp = 0,
-     main = "U.S. vs. Russia Space Race"
+     main = "All Astronauts"
      )
-#Here: Move nodes within the tkplot window to a layout you like!
-coords01 <- tkplot.getcoords(x)
-filename <- "./astronauts_coords_via_tkplot.jpeg"
-jpeg(filename = filename, width = 6, height = 4, units = "in", quality = 95, res = 300, type = "cairo")
-par(mar = c(1, 0, 1, 0))
-plot(g1,
-        layout = coords01,
-        main = "U.S. vs. Russia Space Race",
-        vertex.color = V(g1)$nationality_col,
-        vertex.size = V(g1)$total_number_of_missions * 2,
-        vertex.label = V(g1)$last_name,
-        vertex.label.dist = 1.4,
-        vertex.label.cex = 1.25,
-        asp = 0
-     )
-dev.off()
-
 ```
+
 
