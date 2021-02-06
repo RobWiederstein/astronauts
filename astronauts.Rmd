@@ -1,5 +1,10 @@
 ---
 title: "Astronauts"
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 author: 'Rob Wiederstein'
 date: '`r Sys.Date()`'
 output:
@@ -192,9 +197,11 @@ df7
 
 ## The Space Race
 
-The "Space Race" was a competition between  cold War rivals: the United States and U.S.S.R.  The Race begain in 1955 when the U.S. announced  its intent to launch four orbiting satellites.  The U.S.S.R. successfully launched the first orbiting satellite, Sputnik I, and sent the first human to space, Yuri Gagarin, on April 12, 1961.  The height of the Race was the U.S. landing the first person on the moon on July 20, 1969.  The mission was "Apollo 11." See the Wikipedia [article](https://en.wikipedia.org/wiki/Space_Race).
+The "Space Race" was a competition between two Cold War rivals: the United States and the U.S.S.R.  The race began in 1955 when the U.S. announced  its intent to launch four orbiting satellites.  The U.S.S.R. successfully preempted the U.S. by launching the first orbiting satellite, Sputnik I.  The U.S.S.R. also sent the first human to space, Yuri Gagarin, on April 12, 1961.  The height of the race was the U.S. landing the first person on the moon on July 20, 1969.  The mission was "Apollo 11." See the Wikipedia [article](https://en.wikipedia.org/wiki/Space_Race).
 
 Below the astronaut database was subset to the space flights from `r min(df$year_of_mission)` to 1969. Since no other countries had the capability or desire to participate and because there was a limited number of flights, the smaller dataset was easier to experiment with and the astronaut names are familiar to most.
+
+The nodes represent individual astronauts and they are grouped by mission. The size of the node represents the number of missions of each astronaut over his or her career.
 
 ### Edge list
 
@@ -301,15 +308,17 @@ plot(g1,
      asp = 0,
      main = "All Astronauts"
      )
-legend(x = "bottomleft",      ## position, also takes x,y coordinates
-       legend = c("U.S.", "Russia", "Other"), #legend_cats$attr,
-       pch = 19,              ## legend symbols see ?points
+#add legend
+legend(x = "bottomleft",
+       legend = c("U.S.", "Russia", "Other"),
+       pch = 19,
        col = c("blue", "red", "yellow"),
        bty = "n",
        title = "Nationality",
        cex = 1,
        pt.cex = 2)
 ```
+
 # Conclusion
 
 Some of the challenges in the data did not end up presenting problems in the creation of the social networks.  There's a lot more here to investigate, but as always, time is limited and there are other projects waiting.  I would have liked for the nodes to be plotted more broadly, but it was going to take some effort to accomplish it.  That's something I'll pursue in the future.  (It will likely involve the `qgraph` package for those that are interested.) Many thanks to Jesse Mostipak for posting the data set to Kaggle and to George Karamanis for creating it.
