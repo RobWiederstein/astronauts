@@ -24,7 +24,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r astronaut-import-libraries, include = F}
-x <- c("igraph", "tidyverse", "kableExtra", "knitr", "corrplot")
+x <- c("igraph", "tidyverse", "kableExtra", "knitr", "corrplot", "qgraph")
 lapply(x, library, character.only = T)
 ```
 
@@ -290,8 +290,6 @@ plot(g1,
      vertex.color = V(g1)$nationality_col,
      vertex.size = V(g1)$total_number_of_missions * 1.5,
      vertex.label = NA,
-     vertex.label.dist = 1.4,
-     vertex.label.cex = 1.25,
      asp = 0,
      main = "All Astronauts"
      )
