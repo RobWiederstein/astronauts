@@ -213,8 +213,8 @@ df.2 <-
         unique
 
 #edge list dataframe
-df.3 <- dplyr::select(df.2, name1, name2,  mission_title)
-head(df.3)
+edges <- dplyr::select(df.2, name1, name2,  mission_title)
+head(edges)
 ```
 
 
@@ -222,7 +222,7 @@ head(df.3)
 
 ```{r astro-space-race-nodes}
 #nodes
-nodes <- tibble(name = unique(c(df.3$name1, df.3$name2)))
+nodes <- tibble(name = unique(c(edges$name1, edges$name2)))
 nodes.1 <- dplyr::left_join(nodes, df.1, by = "name")
 nodes.1 <- nodes.1[-which(duplicated(nodes.1$name) == TRUE), ]
 #add nationality
@@ -231,7 +231,7 @@ nodes.1$nationality_col[grep("Russia", nodes.1$nationality)] <- "red"
 #add lastname
 nodes.1$last_name <- gsub(",", "", word(nodes.1$name))
 #graph
-g <- graph_from_data_frame(df.3,
+g <- graph_from_data_frame(edges,
                            directed = FALSE,
                            vertices = nodes.1)
 g1 <- igraph::simplify(g)
@@ -253,7 +253,9 @@ plot(g1,
 
 ## All Astronauts
 
+Having accomplished a plot of a subset of the data, it is time to try a broader effort.  Below is the creation of the edge list and vertex list for the full set of astronauts grouped by mission title.
 
+### Edge list
 ```{r astro-all_astros}
 df.2 <-
         df %>%  
@@ -265,13 +267,14 @@ df.2 <-
         unique
 
 #edge list dataframe
-df.3 <- dplyr::select(df.2, name1, name2,  mission_title)
-head(df.3)
+edges <- dplyr::select(df.2, name1, name2,  mission_title)
+head(edges)
 ```
 
+### Nodes
 ```{r astro-all-astro-nodes}
 #nodes
-nodes <- tibble(name = unique(c(df.3$name1, df.3$name2)))
+nodes <- tibble(name = unique(c(edges$name1, edges$name2)))
 nodes.1 <- dplyr::left_join(nodes, df, by = "name")
 nodes.1 <- nodes.1[-which(duplicated(nodes.1$name) == TRUE), ]
 #add nationality as factor
@@ -283,14 +286,10 @@ nodes.1$nationality_col <- "yellow"
 nodes.1$nationality_col[grep("U\\.S\\.$", nodes.1$nationality_f)] <- "blue"
 nodes.1$nationality_col[grep("Russia", nodes.1$nationality_f)] <- "red"
 #graph
-g <- graph_from_data_frame(df.3,
+g <- graph_from_data_frame(edges,
                            directed = FALSE,
                            vertices = nodes.1)
 g1 <- igraph::simplify(g)
-#legend
-legend_cats <- data.frame(attr = unique(vertex_attr(g1, "nationality_f")),
-                          color = unique(V(g1)$nationality_col))
-legend_cats <- legend_cats[order(legend_cats$attr), c(1, 2)]
 #plot
 par(mar = c(1, 1, 1, 1))
 set.seed(123)
@@ -308,8 +307,10 @@ legend(x = "bottomleft",      ## position, also takes x,y coordinates
        col = c("blue", "red", "yellow"),
        bty = "n",
        title = "Nationality",
-       cex = 1.5,
+       cex = 1,
        pt.cex = 2)
 ```
+# Conclusion
 
+Some of the challenges in the data did not end up presenting problems in the creation of the social networks.  There's a lot more here to investigate, but as always, time is limited and there are other projects waiting.  I would have liked for the nodes to be plotted more broadly, but it was going to take some effort to accomplish it.  That's something I'll pursue in the future.  (It will likely involve the `qgraph` package for those that are interested.) Many thanks to Jesse Mostipak for posting the data set to Kaggle and to George Karamanis for creating it.
 
