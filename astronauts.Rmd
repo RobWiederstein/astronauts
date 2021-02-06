@@ -274,15 +274,24 @@ head(df.3)
 nodes <- tibble(name = unique(c(df.3$name1, df.3$name2)))
 nodes.1 <- dplyr::left_join(nodes, df, by = "name")
 nodes.1 <- nodes.1[-which(duplicated(nodes.1$name) == TRUE), ]
-#add nationality
+#add nationality as factor
+nodes.1 <-
+        nodes.1 %>%
+        mutate(nationality_f = fct_lump(nationality, n = 2))
+#add nationality as color
 nodes.1$nationality_col <- "yellow"
-nodes.1$nationality_col[grep("U\\.S\\.$", nodes.1$nationality)] <- "blue"
-nodes.1$nationality_col[grep("Russia", nodes.1$nationality)] <- "red"
+nodes.1$nationality_col[grep("U\\.S\\.$", nodes.1$nationality_f)] <- "blue"
+nodes.1$nationality_col[grep("Russia", nodes.1$nationality_f)] <- "red"
 #graph
 g <- graph_from_data_frame(df.3,
                            directed = FALSE,
                            vertices = nodes.1)
 g1 <- igraph::simplify(g)
+#legend
+legend_cats <- data.frame(attr = unique(vertex_attr(g1, "nationality_f")),
+                          color = unique(V(g1)$nationality_col))
+legend_cats <- legend_cats[order(legend_cats$attr), c(1, 2)]
+#plot
 par(mar = c(1, 1, 1, 1))
 set.seed(123)
 plot(g1,
@@ -293,6 +302,14 @@ plot(g1,
      asp = 0,
      main = "All Astronauts"
      )
+legend(x = "bottomleft",      ## position, also takes x,y coordinates
+       legend = c("U.S.", "Russia", "Other"), #legend_cats$attr,
+       pch = 19,              ## legend symbols see ?points
+       col = c("blue", "red", "yellow"),
+       bty = "n",
+       title = "Nationality",
+       cex = 1.5,
+       pt.cex = 2)
 ```
 
 
